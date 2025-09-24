@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Customer Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+  <h2 class="h4 mb-0">Customer Dashboard</h2>
+  <div class="btn-group btn-group-sm">
+    <a class="btn btn-primary" href="{% url 'booking_wizard' %}">Book</a>
+    <a class="btn btn-outline-primary" href="{% url 'providers_list' %}">Providers</a>
+    <a class="btn btn-outline-secondary" href="{% url 'appointment_list' %}">Appointments</a>
+  </div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <h6 class="text-muted small mb-1">Upcoming</h6>
+      <div class="display-6 fw-semibold text-primary">{{ upcoming|length }}</div>
+      <small class="text-muted">Scheduled or pending</small>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <h6 class="text-muted small mb-1">Past</h6>
+      <div class="display-6 fw-semibold text-secondary">{{ past|length }}</div>
+      <small class="text-muted">Completed history</small>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <h6 class="text-muted small mb-1">Quick Action</h6>
+      <a class="btn btn-sm btn-primary" href="{% url 'booking_wizard' %}">New Booking</a>
+      <a class="btn btn-sm btn-outline-secondary mt-2" href="{% url 'providers_list' %}">Find Provider</a>
+    </div>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>Upcoming Appointments</strong></div>
+      <ul class="list-group list-group-flush small">
+        {% for a in upcoming %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">{{ a.slot.provider.username }}</div>
+              <small class="text-muted">{{ a.slot.start_time|date:'Y-m-d H:i' }}</small>
+            </div>
+            <div>
+              <span class="badge text-bg-{% if a.status == 'approved' %}success{% elif a.status == 'pending' %}warning{% elif a.status == 'cancelled' %}secondary{% else %}danger{% endif %}">{{ a.status }}</span>
+              {% if a.status in 'pending approved' %}<a class="btn btn-outline-danger btn-sm ms-2" href="{% url 'appointment_action' a.id 'cancel' %}">Cancel</a>{% endif %}
+            </div>
+          </li>
+        {% empty %}<li class="list-group-item">No upcoming appointments</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header py-2"><strong>Past Appointments</strong></div>
+      <ul class="list-group list-group-flush small">
+        {% for a in past %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ a.slot.provider.username }}</span>
+            <small class="text-muted">{{ a.slot.start_time|date:'Y-m-d H:i' }}</small>
+          </li>
+        {% empty %}<li class="list-group-item">No past appointments</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Delete Availability{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6 col-xl-5">
+    <div class="card border-danger shadow-sm">
+      <div class="card-header bg-danger-subtle text-danger-emphasis"><strong>Delete Availability</strong></div>
+      <div class="card-body">
+        <p class="mb-2">Date: <strong>{{ availability.date }}</strong></p>
+        <p class="mb-2">Time: <strong>{{ availability.start_time|time:'H:i' }} - {{ availability.end_time|time:'H:i' }}</strong></p>
+        <p class="mb-3">Interval: {{ availability.interval_minutes }} minutes</p>
+        {% if blocked %}
+          <div class="alert alert-warning small">Cannot delete: one or more generated slots have been booked. Cancel those appointments first.</div>
+          <a class="btn btn-outline-secondary" href="{% url 'availability_list' %}">Back</a>
+        {% else %}
+          <form method="post" class="d-flex gap-2 align-items-center">{% csrf_token %}
+            <button class="btn btn-danger" type="submit"><i class="bi bi-trash"></i> Confirm Delete</button>
+            <a class="btn btn-outline-secondary" href="{% url 'availability_list' %}">Cancel</a>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

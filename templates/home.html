@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% block title %}Professional Healthcare Booking · {{ PROJECT_NAME }}{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Professional appointment booking system for healthcare providers. Simple scheduling, real-time availability, and seamless patient management.">
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="container-fluid">
+      <div class="row align-items-center justify-content-center">
+        <div class="col-lg-8 text-center">
+          <h1 class="mb-4">
+            Professional Healthcare
+            <br><span class="text-white">Appointment Booking</span>
+          </h1>
+          <p class="lead mb-5">
+            Streamline your practice with our intelligent scheduling system. 
+            Connect patients with providers seamlessly, manage availability efficiently, 
+            and focus on what matters most - quality care.
+          </p>
+          
+          <div class="hero-actions d-flex flex-column flex-sm-row gap-3 justify-content-center">
+            {% if not user.is_authenticated %}
+              <a class="btn btn-light btn-lg px-5 py-3" href="{% url 'auth_combined' %}">
+                <i class="bi bi-person-plus me-2"></i>Get Started Free
+              </a>
+              <a class="btn btn-outline btn-lg px-5 py-3" href="{% url 'providers_list' %}">
+                <i class="bi bi-search me-2"></i>Find Providers
+              </a>
+            {% else %}
+              <a class="btn btn-light btn-lg px-5 py-3" href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+              </a>
+              {% if not user.is_provider %}
+                <a class="btn btn-outline btn-lg px-5 py-3" href="{% url 'providers_list' %}">
+                  <i class="bi bi-calendar-plus me-2"></i>Book Appointment
+                </a>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+  <div class="container-fluid">
+    <div class="row mb-5">
+      <div class="col-lg-8 mx-auto text-center">
+        <h2 class="mb-3">Why Choose Our Platform?</h2>
+        <p class="text-muted lead">
+          Built by healthcare professionals for healthcare professionals. 
+          Our platform combines simplicity with powerful features.
+        </p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-calendar-heart"></i>
+          </div>
+          <h3>Smart Scheduling</h3>
+          <p>Intelligent time slot management with real-time availability updates and automatic conflict resolution.</p>
+          <ul class="list-unstyled text-start mt-4">
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Auto-generated time slots</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Real-time availability</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Conflict prevention</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h3>Provider Network</h3>
+          <p>Comprehensive provider profiles with specialty-based search and patient reviews for informed decisions.</p>
+          <ul class="list-unstyled text-start mt-4">
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Specialty filtering</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Provider profiles</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Easy discovery</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h3>Secure & Reliable</h3>
+          <p>HIPAA-compliant platform with enterprise-grade security and 99.9% uptime guarantee.</p>
+          <ul class="list-unstyled text-start mt-4">
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>HIPAA compliant</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Data encryption</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>99.9% uptime</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+  <div class="container-fluid">
+    <div class="row mb-5">
+      <div class="col-lg-8 mx-auto text-center">
+        <h2 class="mb-3">How It Works</h2>
+        <p class="text-muted lead">Simple steps to get started with professional appointment booking</p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <!-- For Patients -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-person me-2"></i>For Patients</h4>
+          </div>
+          <div class="card-body">
+            <div class="step-process">
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-primary text-white">1</div>
+                <div>
+                  <h5>Search Providers</h5>
+                  <p class="text-muted mb-0">Browse healthcare providers by specialty, location, and availability.</p>
+                </div>
+              </div>
+              
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-primary text-white">2</div>
+                <div>
+                  <h5>Select Time Slot</h5>
+                  <p class="text-muted mb-0">Choose from available time slots that fit your schedule.</p>
+                </div>
+              </div>
+              
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-primary text-white">3</div>
+                <div>
+                  <h5>Confirm Booking</h5>
+                  <p class="text-muted mb-0">Receive instant confirmation and appointment reminders.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- For Providers -->
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="bi bi-person-badge me-2"></i>For Providers</h4>
+          </div>
+          <div class="card-body">
+            <div class="step-process">
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-success text-white">1</div>
+                <div>
+                  <h5>Set Availability</h5>
+                  <p class="text-muted mb-0">Define your working hours and available time slots easily.</p>
+                </div>
+              </div>
+              
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-success text-white">2</div>
+                <div>
+                  <h5>Manage Requests</h5>
+                  <p class="text-muted mb-0">Review and approve appointment requests from your dashboard.</p>
+                </div>
+              </div>
+              
+              <div class="step-item d-flex align-items-start gap-3 mb-4">
+                <div class="step-number bg-success text-white">3</div>
+                <div>
+                  <h5>Track Appointments</h5>
+                  <p class="text-muted mb-0">Monitor your schedule and patient interactions efficiently.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="py-5">
+  <div class="container-fluid">
+    <div class="row g-4 text-center">
+      <div class="col-lg-3 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h3 class="text-primary">500+</h3>
+          <p>Active Providers</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <h3 class="text-primary">10K+</h3>
+          <p>Appointments Booked</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-clock"></i>
+          </div>
+          <h3 class="text-primary">24/7</h3>
+          <p>Platform Availability</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6">
+        <div class="dashboard-card">
+          <div class="dashboard-card-icon">
+            <i class="bi bi-star"></i>
+          </div>
+          <h3 class="text-primary">4.9/5</h3>
+          <p>Average Rating</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 bg-gradient-primary text-white">
+  <div class="container-fluid text-center">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <h2 class="mb-4">Ready to Transform Your Practice?</h2>
+        <p class="lead mb-4">
+          Join thousands of healthcare providers who trust our platform for their appointment management needs.
+        </p>
+        
+        {% if not user.is_authenticated %}
+          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+            <a class="btn btn-light btn-lg px-5" href="{% url 'auth_combined' %}">
+              <i class="bi bi-person-plus me-2"></i>Start Free Trial
+            </a>
+            <a class="btn btn-outline-light btn-lg px-5" href="#">
+              <i class="bi bi-telephone me-2"></i>Contact Sales
+            </a>
+          </div>
+        {% else %}
+          <a class="btn btn-light btn-lg px-5" href="{% url 'dashboard' %}">
+            <i class="bi bi-arrow-right me-2"></i>Continue to Dashboard
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Additional Styles -->
+<style>
+  .step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  
+  .step-process .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 50px;
+    width: 2px;
+    height: 60px;
+    background: var(--gray-200);
+    z-index: -1;
+  }
+  
+  .step-process {
+    position: relative;
+  }
+  
+  .hero-actions .btn {
+    min-width: 200px;
+  }
+  
+  @media (max-width: 768px) {
+    .hero h1 {
+      font-size: 2rem;
+    }
+    
+    .hero-actions .btn {
+      min-width: auto;
+      width: 100%;
+    }
+    
+    .step-process .step-item::after {
+      display: none;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block content %}
+<div class="alert alert-success">
+  <h4>Booking Submitted</h4>
+  <p>Your appointment is <strong>{{ appointment.get_status_display }}</strong> (initially Pending until provider approves).</p>
+  <p><strong>Provider:</strong> {{ appointment.slot.provider.username }}<br>
+     <strong>When:</strong> {{ appointment.slot.start_time|date:'Y-m-d H:i' }} - {{ appointment.slot.end_time|date:'H:i' }}</p>
+  <a class="btn btn-primary" href="{% url 'appointment_list' %}">View My Appointments</a>
+  <a class="btn btn-secondary" href="{% url 'booking_wizard' %}">Book Another</a>
+</div>
+{% endblock %}

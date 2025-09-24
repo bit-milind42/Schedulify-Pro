@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+  <h2 class="h4 mb-0">Appointments {% if mode == 'provider' %}· Clients{% else %}· My Bookings{% endif %}</h2>
+  <div class="btn-group btn-group-sm">
+    <a class="btn btn-outline-primary" href="{% url 'booking_wizard' %}">New Booking</a>
+    {% if mode != 'provider' %}<a class="btn btn-outline-secondary" href="{% url 'appointment_list' %}?mode=provider">Provider View</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'appointment_list' %}">Customer View</a>{% endif %}
+  </div>
+</div>
+<div class="table-responsive">
+{% now 'U' as current_ts %}
+<table class="table align-middle table-striped">
+  <thead class="table-light"><tr><th>Time</th><th>{% if mode == 'provider' %}Customer{% else %}Provider{% endif %}</th><th>Status</th><th style="width:1%">Actions</th></tr></thead>
+  {% for a in appointments %}
+  <tr>
+    <td><div class="small fw-semibold">{{ a.slot.start_time|date:'Y-m-d H:i' }}</div><small class="text-muted">{{ a.slot.end_time|date:'H:i' }}</small></td>
+    <td><span class="fw-semibold">{% if mode == 'provider' %}{{ a.customer.username }}{% else %}{{ a.slot.provider.username }}{% endif %}</span></td>
+    <td>{% if a.status == 'pending' %}<span class="badge text-bg-warning">Pending{% elif a.status == 'approved' %}<span class="badge text-bg-success">Approved{% elif a.status == 'rejected' %}<span class="badge text-bg-danger">Rejected{% elif a.status == 'cancelled' %}<span class="badge text-bg-secondary">Cancelled{% elif a.status == 'completed' %}<span class="badge text-bg-info">Completed{% endif %}</td>
+    <td>
+      {% if a.status == 'pending' and mode == 'provider' %}
+        <a class="btn btn-success btn-sm" href="{% url 'appointment_action' a.id 'approve' %}">Approve</a>
+        <a class="btn btn-warning btn-sm" href="{% url 'appointment_action' a.id 'reject' %}">Reject</a>
+      {% endif %}
+      {% if a.status == 'pending' and mode != 'provider' or a.status == 'approved' and mode != 'provider' %}
+        <a class="btn btn-danger btn-sm" href="{% url 'appointment_action' a.id 'cancel' %}">Cancel</a>
+      {% endif %}
+      {% if mode == 'provider' and a.status == 'approved' and a.slot.start_time|date:'U' < current_ts %}
+        <a class="btn btn-outline-info btn-sm" href="{% url 'appointment_action' a.id 'complete' %}">Complete</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="4">No appointments.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

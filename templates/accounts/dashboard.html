@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - {{ PROJECT_NAME }}{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-2">
+      {% if user.is_provider %}
+        <i class="bi bi-person-badge text-primary me-2"></i>Provider Dashboard
+      {% else %}
+        <i class="bi bi-person text-primary me-2"></i>Patient Dashboard
+      {% endif %}
+    </h1>
+    <p class="text-muted mb-0">
+      Welcome back, <strong>{{ user.first_name|default:user.username }}</strong>
+      {% if user.specialty %}
+        <span class="badge badge-primary ms-2">{{ user.specialty }}</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="d-none d-md-block">
+    <div class="text-end text-muted">
+      <small>
+        <i class="bi bi-calendar me-1"></i>{{ "now"|date:"F d, Y" }}<br>
+        <i class="bi bi-clock me-1"></i>{{ "now"|date:"g:i A" }}
+      </small>
+    </div>
+  </div>
+</div>
+
+{% if user.is_provider %}
+  <!-- Provider Dashboard -->
+  
+  <!-- Statistics Cards -->
+  <div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <h3>{{ pending_requests|length }}</h3>
+        <p>Pending Requests</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <h3>{{ upcoming_approved|length }}</h3>
+        <p>Upcoming Appointments</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-calendar-plus"></i>
+        </div>
+        <h3>{{ available_slots|length|default:"0" }}</h3>
+        <p>Available Slots</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-star"></i>
+        </div>
+        <h3>4.8</h3>
+        <p>Average Rating</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card mb-5">
+    <div class="card-header">
+      <h4 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h4>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <a class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="{% url 'availability_create' %}">
+            <i class="bi bi-calendar-plus fs-4"></i>
+            <span>Add Availability</span>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="{% url 'availability_list' %}">
+            <i class="bi bi-calendar-week fs-4"></i>
+            <span>Manage Schedule</span>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="{% url 'appointment_list' %}?mode=provider">
+            <i class="bi bi-list-check fs-4"></i>
+            <span>All Appointments</span>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="#">
+            <i class="bi bi-graph-up fs-4"></i>
+            <span>Analytics</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row g-4">
+    <!-- Pending Requests -->
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history text-warning me-2"></i>Pending Requests
+          </h5>
+          <span class="badge badge-warning">{{ pending_requests|length }}</span>
+        </div>
+        <div class="card-body p-0">
+          {% if pending_requests %}
+            <div class="list-group list-group-flush">
+              {% for appointment in pending_requests %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="user-avatar bg-secondary">
+                          {{ appointment.customer.first_name|first|default:appointment.customer.username|first|upper }}
+                        </div>
+                        <div>
+                          <h6 class="mb-0">{{ appointment.customer.first_name|default:appointment.customer.username }}</h6>
+                          <small class="text-muted">{{ appointment.customer.email }}</small>
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-3 text-muted small">
+                        <span><i class="bi bi-calendar me-1"></i>{{ appointment.slot.start_time|date:'M d, Y' }}</span>
+                        <span><i class="bi bi-clock me-1"></i>{{ appointment.slot.start_time|date:'g:i A' }}</span>
+                        <span><i class="bi bi-hourglass-split me-1"></i>{{ appointment.slot.duration_minutes }}min</span>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <a class="btn btn-success btn-sm" href="{% url 'appointment_action' appointment.id 'approve' %}">
+                        <i class="bi bi-check me-1"></i>Approve
+                      </a>
+                      <a class="btn btn-outline-danger btn-sm" href="{% url 'appointment_action' appointment.id 'reject' %}">
+                        <i class="bi bi-x me-1"></i>Reject
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <i class="bi bi-inbox"></i>
+              </div>
+              <h5>No pending requests</h5>
+              <p class="text-muted">You're all caught up! New appointment requests will appear here.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-calendar-check text-success me-2"></i>Upcoming
+          </h5>
+          <span class="badge badge-success">{{ upcoming_approved|length }}</span>
+        </div>
+        <div class="card-body p-0">
+          {% if upcoming_approved %}
+            <div class="list-group list-group-flush">
+              {% for appointment in upcoming_approved %}
+                <div class="list-group-item">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar bg-success">
+                      {{ appointment.customer.first_name|first|default:appointment.customer.username|first|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                      <h6 class="mb-0">{{ appointment.customer.first_name|default:appointment.customer.username }}</h6>
+                      <small class="text-muted">{{ appointment.customer.email }}</small>
+                    </div>
+                  </div>
+                  <div class="text-muted small">
+                    <div><i class="bi bi-calendar me-1"></i>{{ appointment.slot.start_time|date:'M d, Y' }}</div>
+                    <div><i class="bi bi-clock me-1"></i>{{ appointment.slot.start_time|date:'g:i A' }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state py-4">
+              <div class="empty-state-icon">
+                <i class="bi bi-calendar-x"></i>
+              </div>
+              <h6>No upcoming appointments</h6>
+              <p class="text-muted small mb-0">Your approved appointments will appear here.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  <!-- Patient Dashboard -->
+  
+  <!-- Statistics Cards -->
+  <div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-calendar-event"></i>
+        </div>
+        <h3>{{ upcoming|length }}</h3>
+        <p>Upcoming Appointments</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-check-circle"></i>
+        </div>
+        <h3>{{ past|length }}</h3>
+        <p>Completed Appointments</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-people"></i>
+        </div>
+        <h3>{{ providers_count|default:"12" }}</h3>
+        <p>Available Providers</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+      <div class="dashboard-card">
+        <div class="dashboard-card-icon">
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <h3>4.9</h3>
+        <p>Your Average Rating</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card mb-5">
+    <div class="card-header">
+      <h4 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h4>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="{% url 'providers_list' %}">
+            <i class="bi bi-search fs-4"></i>
+            <span>Find Provider</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="{% url 'appointment_list' %}">
+            <i class="bi bi-calendar-check fs-4"></i>
+            <span>My Appointments</span>
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 py-3" 
+             href="#">
+            <i class="bi bi-person fs-4"></i>
+            <span>Profile Settings</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="row g-4">
+    <!-- Upcoming Appointments -->
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-calendar-event text-primary me-2"></i>Upcoming Appointments
+          </h5>
+          <span class="badge badge-primary">{{ upcoming|length }}</span>
+        </div>
+        <div class="card-body p-0">
+          {% if upcoming %}
+            <div class="list-group list-group-flush">
+              {% for appointment in upcoming %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="provider-avatar">
+                          {{ appointment.slot.provider.first_name|first|default:appointment.slot.provider.username|first|upper }}
+                        </div>
+                        <div>
+                          <h6 class="mb-0">Dr. {{ appointment.slot.provider.first_name|default:appointment.slot.provider.username }}</h6>
+                          {% if appointment.slot.provider.specialty %}
+                            <small class="text-muted">{{ appointment.slot.provider.specialty }}</small>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-3 text-muted small">
+                        <span><i class="bi bi-calendar me-1"></i>{{ appointment.slot.start_time|date:'M d, Y' }}</span>
+                        <span><i class="bi bi-clock me-1"></i>{{ appointment.slot.start_time|date:'g:i A' }}</span>
+                        <span class="status status-{{ appointment.status }}">{{ appointment.status|capfirst }}</span>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                      {% if appointment.status in 'pending,approved' %}
+                        <a class="btn btn-outline-danger btn-sm" href="{% url 'appointment_action' appointment.id 'cancel' %}">
+                          <i class="bi bi-x me-1"></i>Cancel
+                        </a>
+                      {% endif %}
+                      <button class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-info-circle me-1"></i>Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <i class="bi bi-calendar-x"></i>
+              </div>
+              <h5>No upcoming appointments</h5>
+              <p class="text-muted">Ready to book your next appointment?</p>
+              <a class="btn btn-primary" href="{% url 'providers_list' %}">
+                <i class="bi bi-plus me-1"></i>Book Appointment
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history text-secondary me-2"></i>Recent Activity
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if past %}
+            <div class="list-group list-group-flush">
+              {% for appointment in past|slice:":5" %}
+                <div class="list-group-item">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="provider-avatar bg-secondary">
+                      {{ appointment.slot.provider.first_name|first|default:appointment.slot.provider.username|first|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                      <h6 class="mb-0 small">Dr. {{ appointment.slot.provider.first_name|default:appointment.slot.provider.username }}</h6>
+                      <small class="text-muted">{{ appointment.slot.start_time|date:'M d, Y' }}</small>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="status status-{{ appointment.status }} small">{{ appointment.status|capfirst }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state py-4">
+              <div class="empty-state-icon">
+                <i class="bi bi-journal-x"></i>
+              </div>
+              <h6>No past appointments</h6>
+              <p class="text-muted small mb-0">Your appointment history will appear here.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Additional Styles -->
+<style>
+  .provider-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+  
+  .list-group-item {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+  }
+  
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
+  
+  .status {
+    font-size: 0.75rem !important;
+  }
+</style>
+{% endblock %}

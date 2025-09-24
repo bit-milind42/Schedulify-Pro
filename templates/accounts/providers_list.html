@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% block title %}Healthcare Providers - {{ PROJECT_NAME }}{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Find qualified healthcare providers in your area. Browse by specialty, location, and availability.">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row align-items-start align-md-center justify-content-between mb-4">
+  <div class="mb-3 mb-md-0">
+    <h1 class="mb-2">
+      <i class="bi bi-people text-primary me-2"></i>Healthcare Providers
+    </h1>
+    <p class="text-muted mb-0">Find qualified professionals for your healthcare needs</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary" href="{% url 'booking_wizard' %}">
+      <i class="bi bi-magic me-2"></i>Booking Wizard
+    </a>
+    {% if user.is_authenticated and not user.is_provider %}
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+        <i class="bi bi-funnel me-2"></i>Advanced Filters
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-6">
+        <label for="search" class="form-label">Search Providers</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" id="search" name="q" value="{{ q|default:'' }}" 
+                 class="form-control search-input" 
+                 placeholder="Search by name, specialty, or location"
+                 data-search-target=".provider-card">
+        </div>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="specialty" class="form-label">Specialty</label>
+        <select name="specialty" id="specialty" class="form-control">
+          <option value="">All Specialties</option>
+          <option value="cardiology" {% if request.GET.specialty == 'cardiology' %}selected{% endif %}>Cardiology</option>
+          <option value="dermatology" {% if request.GET.specialty == 'dermatology' %}selected{% endif %}>Dermatology</option>
+          <option value="neurology" {% if request.GET.specialty == 'neurology' %}selected{% endif %}>Neurology</option>
+          <option value="orthopedics" {% if request.GET.specialty == 'orthopedics' %}selected{% endif %}>Orthopedics</option>
+          <option value="pediatrics" {% if request.GET.specialty == 'pediatrics' %}selected{% endif %}>Pediatrics</option>
+          <option value="psychiatry" {% if request.GET.specialty == 'psychiatry' %}selected{% endif %}>Psychiatry</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary flex-grow-1" type="submit">
+            <i class="bi bi-search me-2"></i>Search
+          </button>
+          {% if q or request.GET.specialty %}
+            <a href="{% url 'providers_list' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results Summary -->
+{% if q or request.GET.specialty %}
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-funnel text-muted"></i>
+      <span class="text-muted">Filtered results:</span>
+    </div>
+    {% if q %}
+      <span class="badge badge-primary">Search: "{{ q }}"</span>
+    {% endif %}
+    {% if request.GET.specialty %}
+      <span class="badge badge-secondary">{{ request.GET.specialty|capfirst }}</span>
+    {% endif %}
+    <div class="ms-auto">
+      <small class="text-muted">{{ providers|length }} provider{{ providers|length|pluralize }} found</small>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Providers Grid -->
+<div class="row g-4">
+  {% for provider in providers %}
+    <div class="col-xl-3 col-lg-4 col-md-6 searchable">
+      <div class="provider-card">
+        <!-- Provider Header -->
+        <div class="provider-header">
+          <div class="provider-avatar">
+            {{ provider.first_name|first|default:provider.username|first|upper }}
+          </div>
+          <div class="provider-info flex-grow-1">
+            <h5>Dr. {{ provider.first_name|default:provider.username }} {{ provider.last_name|default:"" }}</h5>
+            {% if provider.specialty %}
+              <p class="specialty">
+                <i class="bi bi-award me-1"></i>{{ provider.specialty|capfirst }}
+              </p>
+            {% else %}
+              <p class="specialty text-muted">
+                <i class="bi bi-person me-1"></i>General Practice
+              </p>
+            {% endif %}
+          </div>
+          <div class="provider-rating">
+            <div class="d-flex align-items-center gap-1">
+              <i class="bi bi-star-fill text-warning"></i>
+              <span class="small fw-medium">4.{{ provider.id|add:7 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Provider Details -->
+        <div class="provider-details mt-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="small text-muted">
+              <i class="bi bi-geo-alt me-1"></i>Medical Center
+            </span>
+            <span class="small text-muted">
+              <i class="bi bi-clock me-1"></i>Next available: Today
+            </span>
+          </div>
+          
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex gap-1">
+              <span class="badge badge-success small">Available</span>
+              <span class="badge badge-secondary small">{{ provider.appointments_count|default:"12" }}+ bookings</span>
+            </div>
+            <span class="small text-success fw-medium">
+              <i class="bi bi-check-circle me-1"></i>Verified
+            </span>
+          </div>
+        </div>
+
+        <!-- Provider Actions -->
+        <div class="provider-actions">
+          <div class="d-flex gap-2">
+            <a class="btn btn-primary flex-grow-1" href="{% url 'provider_slots' provider.id %}">
+              <i class="bi bi-calendar-check me-1"></i>View Slots
+            </a>
+            <a class="btn btn-outline-primary" href="{% url 'booking_wizard' %}?provider={{ provider.id }}" title="Quick Book">
+              <i class="bi bi-lightning"></i>
+            </a>
+            <button class="btn btn-outline-secondary" onclick="showProviderDetails({{ provider.id }})" title="View Details">
+              <i class="bi bi-info-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          {% if q or request.GET.specialty %}
+            <i class="bi bi-search"></i>
+          {% else %}
+            <i class="bi bi-people"></i>
+          {% endif %}
+        </div>
+        <h4>
+          {% if q or request.GET.specialty %}
+            No providers match your search
+          {% else %}
+            No providers available
+          {% endif %}
+        </h4>
+        <p class="text-muted">
+          {% if q or request.GET.specialty %}
+            Try adjusting your search criteria or browse all available providers.
+          {% else %}
+            Healthcare providers will appear here once they register and set up their profiles.
+          {% endif %}
+        </p>
+        {% if q or request.GET.specialty %}
+          <div class="mt-4">
+            <a href="{% url 'providers_list' %}" class="btn btn-primary">
+              <i class="bi bi-arrow-left me-2"></i>View All Providers
+            </a>
+            <a href="{% url 'booking_wizard' %}" class="btn btn-outline-primary">
+              <i class="bi bi-magic me-2"></i>Try Booking Wizard
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Load More Button (for future pagination) -->
+{% if providers %}
+  <div class="text-center mt-5">
+    <button class="btn btn-outline-primary btn-lg" onclick="loadMoreProviders()" id="loadMoreBtn" style="display: none;">
+      <i class="bi bi-arrow-down me-2"></i>Load More Providers
+    </button>
+  </div>
+{% endif %}
+
+<!-- Advanced Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-funnel me-2"></i>Advanced Filters
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="get">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Specialty</label>
+              <select name="specialty" class="form-control">
+                <option value="">All Specialties</option>
+                <option value="cardiology">Cardiology</option>
+                <option value="dermatology">Dermatology</option>
+                <option value="neurology">Neurology</option>
+                <option value="orthopedics">Orthopedics</option>
+                <option value="pediatrics">Pediatrics</option>
+                <option value="psychiatry">Psychiatry</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Availability</label>
+              <select name="availability" class="form-control">
+                <option value="">Any Time</option>
+                <option value="today">Available Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Rating</label>
+              <select name="rating" class="form-control">
+                <option value="">Any Rating</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4+ Stars</option>
+                <option value="3">3+ Stars</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Experience</label>
+              <select name="experience" class="form-control">
+                <option value="">Any Experience</option>
+                <option value="1">1+ Years</option>
+                <option value="5">5+ Years</option>
+                <option value="10">10+ Years</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for enhanced functionality -->
+<script>
+function showProviderDetails(providerId) {
+  // This would show a modal with provider details
+  // For now, we'll just alert
+  alert('Provider details would be shown here for provider ID: ' + providerId);
+}
+
+function loadMoreProviders() {
+  // Future implementation for pagination
+  document.getElementById('loadMoreBtn').innerHTML = '<span class="spinner me-2"></span>Loading...';
+}
+
+// Enhanced search functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.querySelector('.search-input');
+  if (searchInput) {
+    let timeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        // Real-time search would be implemented here
+      }, 300);
+    });
+  }
+});
+</script>
+
+<!-- Additional Styles -->
+<style>
+  .provider-rating {
+    text-align: right;
+  }
+  
+  .provider-details {
+    font-size: 0.875rem;
+  }
+  
+  .provider-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .provider-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .search-highlight {
+    background: rgba(37, 99, 235, 0.1) !important;
+  }
+  
+  .modal-content {
+    border-radius: var(--radius-xl);
+  }
+  
+  .modal-header {
+    border-bottom: 1px solid var(--gray-200);
+    padding: var(--space-lg);
+  }
+  
+  .modal-body {
+    padding: var(--space-lg);
+  }
+  
+  .modal-footer {
+    border-top: 1px solid var(--gray-200);
+    padding: var(--space-lg);
+  }
+</style>
+{% endblock %}

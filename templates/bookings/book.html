@@ -1,0 +1,960 @@
+{% extends 'base.html' %}
+{% block title %}Book Appointment - {{ PROJECT_NAME }}{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Book your appointment with qualified healthcare providers. Simple 3-step process to secure your preferred time slot.">
+<style>
+  .appointment-summary {
+    border-left: 4px solid var(--brand-success);
+  }
+  
+  .confirmation-actions .btn {
+    transition: all 0.2s ease;
+  }
+  
+  .confirmation-actions .btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .provider-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  
+  .time-slot {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .time-slot:hover {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .loading-content {
+    text-align: center;
+    color: white;
+  }
+  
+  .spinner-large {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .appointment-type-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .appointment-type-card:hover {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  }
+  
+  .form-check-input:checked ~ .form-check-label .appointment-type-card {
+    border-color: var(--brand-primary) !important;
+    background-color: var(--brand-primary) !important;
+    color: white !important;
+  }
+  
+  .time-slot {
+    display: block;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    text-align: center;
+    background: var(--white);
+  }
+  
+  .time-slot:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    text-decoration: none;
+    color: inherit;
+    transform: translateY(-2px);
+  }
+  
+  .time-slot-time {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--brand-primary);
+    margin-bottom: 0.25rem;
+  }
+  
+  .time-slot-duration {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+  
+  .time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (max-width: 768px) {
+    .step-indicator {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .step::after {
+      display: none;
+    }
+    
+    .time-slots {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    .appointment-type-card {
+      text-align: center;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row align-items-start align-md-center justify-content-between mb-4">
+  <div class="mb-3 mb-md-0">
+    <h1 class="mb-2">
+      <i class="bi bi-calendar-plus text-primary me-2"></i>Book Appointment
+    </h1>
+    <p class="text-muted mb-0">Find the perfect time slot with your healthcare provider</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'providers_list' %}">
+      <i class="bi bi-arrow-left me-2"></i>Back to Providers
+    </a>
+  </div>
+</div>
+
+<!-- Progress Steps -->
+<div class="step-indicator mb-5">
+  <div class="step {% if not selected_provider %}active{% elif not date %}completed{% endif %}">
+    <i class="bi bi-person me-2"></i>
+    <span>Choose Provider</span>
+  </div>
+  <div class="step {% if selected_provider and not date %}active{% elif selected_provider and date and not confirm_slot %}completed{% endif %}">
+    <i class="bi bi-calendar me-2"></i>
+    <span>Select Date</span>
+  </div>
+  <div class="step {% if selected_provider and date and not confirm_slot %}active{% elif confirm_slot %}completed{% endif %}">
+    <i class="bi bi-clock me-2"></i>
+    <span>Pick Time Slot</span>
+  </div>
+  <div class="step {% if confirm_slot %}active{% endif %}">
+    <i class="bi bi-check-circle me-2"></i>
+    <span>Confirm Booking</span>
+  </div>
+</div>
+
+<!-- Step 1 & 2: Provider and Date Selection -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h4 class="mb-0">
+      <i class="bi bi-funnel me-2"></i>Booking Details
+    </h4>
+  </div>
+  <div class="card-body">
+    <form method="get" class="row g-4" id="wizardForm">
+      <!-- Provider Selection -->
+      <div class="col-md-6">
+        <label for="providerSelect" class="form-label">
+          <i class="bi bi-person-badge me-2"></i>Healthcare Provider
+        </label>
+        <select name="provider" class="form-control" id="providerSelect">
+          <option value="">Select a provider...</option>
+          {% for provider in providers %}
+            <option value="{{ provider.id }}" 
+                    {% if selected_provider and provider.id == selected_provider.id %}selected{% endif %}
+                    data-specialty="{{ provider.specialty|default:'General Practice' }}">
+              Dr. {{ provider.first_name|default:provider.username }} {{ provider.last_name|default:"" }}
+              {% if provider.specialty %}({{ provider.specialty }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        {% if selected_provider %}
+          <div class="mt-2 p-3 bg-light rounded">
+            <div class="d-flex align-items-center gap-3">
+              <div class="provider-avatar">
+                {{ selected_provider.first_name|first|default:selected_provider.username|first|upper }}
+              </div>
+              <div>
+                <h6 class="mb-1">Dr. {{ selected_provider.first_name|default:selected_provider.username }}</h6>
+                <small class="text-muted">
+                  <i class="bi bi-award me-1"></i>{{ selected_provider.specialty|default:"General Practice" }}
+                </small>
+              </div>
+              <div class="ms-auto">
+                <span class="badge badge-success">Selected</span>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Date Selection -->
+      {% if selected_provider %}
+        <div class="col-md-6">
+          <label for="dateInput" class="form-label">
+            <i class="bi bi-calendar-event me-2"></i>Preferred Date
+          </label>
+          <input type="date" name="date" value="{{ date }}" 
+                 class="form-control" id="dateInput" 
+                 min="{{ today|date:'Y-m-d' }}"
+                 max="{{ max_date|date:'Y-m-d' }}" />
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>Select a date up to 30 days in advance
+          </div>
+        </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Step 3: Time Slot Selection -->
+<div id="slotsContainer">
+  {% if selected_provider and date and not confirm_slot %}
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-clock me-2"></i>Available Time Slots
+        </h4>
+        <span class="badge badge-primary">{{ date|date:'M d, Y' }}</span>
+      </div>
+      <div class="card-body">
+        {% if slots %}
+          <div class="time-slots">
+            {% for slot in slots %}
+              <a href="?provider={{ selected_provider.id }}&date={{ date }}&slot={{ slot.id }}" 
+                 class="time-slot" data-slot-id="{{ slot.id }}">
+                <div class="time-slot-time">{{ slot.start_time|date:'g:i A' }}</div>
+                <div class="time-slot-duration">{{ slot.duration_minutes|default:"30" }}min</div>
+              </a>
+            {% endfor %}
+          </div>
+          
+          <div class="mt-4 p-3 bg-light rounded">
+            <h6 class="mb-2">
+              <i class="bi bi-info-circle text-primary me-2"></i>Booking Information
+            </h6>
+            <div class="row">
+              <div class="col-md-6">
+                <small class="text-muted">
+                  <strong>Provider:</strong> Dr. {{ selected_provider.first_name|default:selected_provider.username }}<br>
+                  <strong>Specialty:</strong> {{ selected_provider.specialty|default:"General Practice" }}<br>
+                  <strong>Date:</strong> {{ date|date:'l, F d, Y' }}
+                </small>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">
+                  <strong>Available Slots:</strong> {{ slots|length }}<br>
+                  <strong>Location:</strong> Medical Center<br>
+                  <strong>Duration:</strong> 30 minutes each
+                </small>
+              </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="mt-3">
+              <button class="btn btn-sm btn-outline-primary" onclick="refreshSlots()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh Availability
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" onclick="suggestAlternativeDates()">
+                <i class="bi bi-calendar-week me-1"></i>Show More Dates
+              </button>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state py-4">
+            <div class="empty-state-icon">
+              <i class="bi bi-calendar-x"></i>
+            </div>
+            <h5>No available slots for this date</h5>
+            <p class="text-muted">
+              Dr. {{ selected_provider.first_name|default:selected_provider.username }} doesn't have 
+              any available time slots for {{ date|date:'M d, Y' }}.
+            </p>
+            <div class="mt-3">
+              <button class="btn btn-outline-primary" onclick="suggestAlternativeDates()">
+                <i class="bi bi-calendar-week me-2"></i>View Alternative Dates
+              </button>
+              <button class="btn btn-outline-secondary ms-2" onclick="joinWaitingList()">
+                <i class="bi bi-bell me-2"></i>Join Waiting List
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Step 4: Confirmation -->
+{% if confirm_slot %}
+  <div class="card border-success">
+    <div class="card-header bg-success text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-check-circle me-2"></i>Confirm Your Appointment
+      </h4>
+    </div>
+    <div class="card-body">
+      <form method="post" id="confirmationForm" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="slot" value="{{ confirm_slot.id }}" />
+        
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <!-- Appointment Details -->
+            <div class="appointment-summary p-4 bg-light rounded mb-4">
+              <h5 class="mb-3">Appointment Summary</h5>
+              
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-person-badge text-primary"></i>
+                    <strong>Provider</strong>
+                  </div>
+                  <div class="ps-4">
+                    Dr. {{ confirm_slot.provider.first_name|default:confirm_slot.provider.username }}<br>
+                    <small class="text-muted">{{ confirm_slot.provider.specialty|default:"General Practice" }}</small>
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-calendar-event text-primary"></i>
+                    <strong>Date & Time</strong>
+                  </div>
+                  <div class="ps-4">
+                    {{ confirm_slot.start_time|date:'l, F d, Y' }}<br>
+                    <small class="text-muted">{{ confirm_slot.start_time|date:'g:i A' }} - {{ confirm_slot.end_time|date:'g:i A' }}</small>
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-clock text-primary"></i>
+                    <strong>Duration</strong>
+                  </div>
+                  <div class="ps-4">
+                    30 minutes
+                  </div>
+                </div>
+                
+                <div class="col-sm-6">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-geo-alt text-primary"></i>
+                    <strong>Location</strong>
+                  </div>
+                  <div class="ps-4">
+                    Medical Center<br>
+                    <small class="text-muted">123 Health Street</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Appointment Type Selection -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-list-check me-2"></i>Appointment Type
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-2">
+                  {% for value, label in appointment_types %}
+                    <div class="col-md-6 col-lg-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="appointment_type" 
+                               id="type_{{ value }}" value="{{ value }}" 
+                               {% if value == 'consultation' %}checked{% endif %}>
+                        <label class="form-check-label w-100" for="type_{{ value }}">
+                          <div class="appointment-type-card p-2 border rounded">
+                            <strong class="d-block">{{ label }}</strong>
+                            <small class="text-muted">
+                              {% if value == 'consultation' %}
+                                Initial consultation and assessment
+                              {% elif value == 'followup' %}
+                                Follow-up on previous treatment
+                              {% elif value == 'checkup' %}
+                                Routine health checkup
+                              {% elif value == 'emergency' %}
+                                Urgent medical consultation
+                              {% elif value == 'specialist' %}
+                                Specialized medical consultation
+                              {% endif %}
+                            </small>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Patient Notes -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="bi bi-chat-text me-2"></i>Additional Information
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="patient_notes" class="form-label">
+                    Patient Notes <span class="text-muted">(Optional)</span>
+                  </label>
+                  <textarea name="patient_notes" id="patient_notes" class="form-control" 
+                            rows="4" maxlength="500" 
+                            placeholder="Please describe your symptoms, reason for visit, or any other relevant information that might help your healthcare provider prepare for your appointment..."></textarea>
+                  <div class="form-text">
+                    <small class="text-muted">
+                      <i class="bi bi-info-circle me-1"></i>
+                      This information will help your provider prepare for your appointment. Maximum 500 characters.
+                      <span class="float-end">
+                        <span id="charCount">0</span>/500
+                      </span>
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-lg-4">
+            <div class="confirmation-actions">
+              <button type="submit" class="btn btn-success btn-lg w-100 mb-3" id="confirmBtn">
+                <i class="bi bi-check-circle me-2"></i>Confirm Appointment
+              </button>
+              
+              <a class="btn btn-outline-secondary w-100 mb-2" 
+                 href="?provider={{ selected_provider.id }}&date={{ date }}">
+                <i class="bi bi-arrow-left me-2"></i>Choose Different Time
+              </a>
+              
+              <a class="btn btn-outline-secondary w-100 mb-3" href="{% url 'providers_list' %}">
+                <i class="bi bi-x me-2"></i>Cancel Booking
+              </a>
+            </div>
+            
+            <!-- Important Information -->
+            <div class="card border-info">
+              <div class="card-body">
+                <h6 class="text-info mb-3">
+                  <i class="bi bi-info-circle me-2"></i>Important Information
+                </h6>
+                <ul class="list-unstyled mb-0 small">
+                  <li class="mb-2">
+                    <i class="bi bi-check2 text-success me-2"></i>
+                    You will receive a confirmation email once approved
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-check2 text-success me-2"></i>
+                    Please arrive 15 minutes early for your appointment
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-check2 text-success me-2"></i>
+                    Bring a valid ID and insurance card
+                  </li>
+                  <li class="mb-0">
+                    <i class="bi bi-check2 text-success me-2"></i>
+                    You can reschedule up to 24 hours before
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="mt-4 p-3 border rounded">
+              <h6 class="mb-2">
+                <i class="bi bi-question-circle text-primary me-2"></i>Need Help?
+              </h6>
+              <small class="text-muted">
+                Having trouble with your booking? Contact our support team at 
+                <a href="mailto:support@example.com">support@example.com</a> or 
+                call <a href="tel:+15551234567">(555) 123-4567</a>.
+              </small>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+  <div class="loading-content">
+    <div class="spinner-large"></div>
+    <p>Loading available time slots...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const providerSelect = document.getElementById('providerSelect');
+  const dateInput = document.getElementById('dateInput');
+  const slotsContainer = document.getElementById('slotsContainer');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const patientNotes = document.getElementById('patient_notes');
+  const charCount = document.getElementById('charCount');
+  const confirmForm = document.getElementById('confirmationForm');
+  
+  // Character counter for patient notes
+  if (patientNotes && charCount) {
+    patientNotes.addEventListener('input', function() {
+      const count = this.value.length;
+      charCount.textContent = count;
+      
+      if (count > 450) {
+        charCount.style.color = '#dc2626';
+      } else if (count > 400) {
+        charCount.style.color = '#f59e0b';
+      } else {
+        charCount.style.color = '#6b7280';
+      }
+    });
+  }
+
+  // Form validation for confirmation
+  if (confirmForm) {
+    confirmForm.addEventListener('submit', function(e) {
+      let isValid = true;
+      let errorMessage = '';
+      
+      // Validate appointment type
+      const appointmentType = document.querySelector('input[name="appointment_type"]:checked');
+      if (!appointmentType) {
+        isValid = false;
+        errorMessage = 'Please select an appointment type';
+        highlightError('appointment_type');
+      }
+      
+      // Validate patient notes length
+      if (patientNotes && patientNotes.value.length > 500) {
+        isValid = false;
+        errorMessage = 'Patient notes must be 500 characters or less';
+        highlightError('patient_notes');
+      }
+      
+      // Check for required provider and slot
+      const slotInput = document.querySelector('input[name="slot"]');
+      if (!slotInput || !slotInput.value) {
+        isValid = false;
+        errorMessage = 'Invalid appointment slot';
+      }
+      
+      if (!isValid) {
+        e.preventDefault();
+        showNotification(errorMessage, 'danger');
+        return;
+      }
+      
+      // Show loading state
+      const submitBtn = document.getElementById('confirmBtn');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Confirming...';
+        submitBtn.disabled = true;
+      }
+    });
+    
+    // Real-time validation feedback
+    document.querySelectorAll('input[name="appointment_type"]').forEach(input => {
+      input.addEventListener('change', function() {
+        clearError('appointment_type');
+      });
+    });
+    
+    if (patientNotes) {
+      patientNotes.addEventListener('input', function() {
+        clearError('patient_notes');
+      });
+    }
+  }
+
+  // Validation helper functions
+  function highlightError(fieldName) {
+    if (fieldName === 'appointment_type') {
+      document.querySelectorAll('.appointment-type-card').forEach(card => {
+        card.classList.add('border-danger');
+        card.classList.remove('border');
+      });
+    } else {
+      const field = document.querySelector(`[name="${fieldName}"]`);
+      if (field) {
+        field.classList.add('is-invalid');
+      }
+    }
+  }
+  
+  function clearError(fieldName) {
+    if (fieldName === 'appointment_type') {
+      document.querySelectorAll('.appointment-type-card').forEach(card => {
+        card.classList.remove('border-danger');
+        card.classList.add('border');
+      });
+    } else {
+      const field = document.querySelector(`[name="${fieldName}"]`);
+      if (field) {
+        field.classList.remove('is-invalid');
+      }
+    }
+  }
+  
+  // Validate wizard steps
+  function validateStep(stepNumber) {
+    switch(stepNumber) {
+      case 1:
+        if (!providerSelect || !providerSelect.value) {
+          showNotification('Please select a healthcare provider', 'warning');
+          return false;
+        }
+        break;
+      case 2:
+        if (!dateInput || !dateInput.value) {
+          showNotification('Please select an appointment date', 'warning');
+          return false;
+        }
+        
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+          showNotification('Please select a date that is today or in the future', 'danger');
+          dateInput.classList.add('is-invalid');
+          return false;
+        }
+        
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 30);
+        maxDate.setHours(23, 59, 59, 999);
+        
+        if (selectedDate > maxDate) {
+          showNotification('Please select a date within the next 30 days', 'danger');
+          dateInput.classList.add('is-invalid');
+          return false;
+        }
+        
+        dateInput.classList.remove('is-invalid');
+        break;
+    }
+    return true;
+  }
+
+  // Auto-submit form when provider or date changes
+  function updateForm() {
+    const form = document.getElementById('wizardForm');
+    if (form) {
+      showLoading();
+      form.submit();
+    }
+  }
+
+  function showLoading() {
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'flex';
+    }
+  }
+
+  function hideLoading() {
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'none';
+    }
+  }
+
+  // Enhanced AJAX slot loading
+  function fetchSlots() {
+    const provider = providerSelect ? providerSelect.value : '';
+    if (!provider) { 
+      if (slotsContainer) slotsContainer.innerHTML = ''; 
+      return; 
+    }
+    
+    const date = dateInput ? dateInput.value : '';
+    if (!date) return;
+
+    let url = `/bookings/api/providers/${provider}/slots/`;
+    if (date) { 
+      url += `?date=${date}`; 
+    }
+
+    showLoading();
+    
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        hideLoading();
+        
+        if (!Array.isArray(data.slots) || data.slots.length === 0) {
+          slotsContainer.innerHTML = `
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="empty-state">
+                  <div class="empty-state-icon">
+                    <i class="bi bi-calendar-x"></i>
+                  </div>
+                  <h5>No available slots for this date</h5>
+                  <p class="text-muted">
+                    ${data.provider?.name || 'The provider'} doesn't have any available time slots for ${new Date(date).toLocaleDateString()}.
+                  </p>
+                  <div class="mt-3">
+                    <button class="btn btn-outline-primary" onclick="suggestAlternativeDates()">
+                      <i class="bi bi-calendar-week me-2"></i>View Alternative Dates
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="joinWaitingList()">
+                      <i class="bi bi-bell me-2"></i>Join Waiting List
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        let html = `
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h4 class="mb-0">
+                <i class="bi bi-clock me-2"></i>Available Time Slots
+              </h4>
+              <span class="badge badge-primary">${new Date(date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</span>
+            </div>
+            <div class="card-body">
+              <div class="time-slots">
+        `;
+
+        data.slots.forEach(slot => {
+          const params = new URLSearchParams({
+            provider: provider,
+            date: date,
+            slot: slot.id
+          });
+
+          html += `
+            <a href="?${params.toString()}" class="time-slot" data-slot-id="${slot.id}">
+              <div class="time-slot-time">${slot.formatted_time}</div>
+              <div class="time-slot-duration">${slot.duration}min</div>
+            </a>
+          `;
+        });
+
+        html += `
+              </div>
+              <div class="mt-4 p-3 bg-light rounded">
+                <h6 class="mb-2">
+                  <i class="bi bi-info-circle text-primary me-2"></i>Booking Information
+                </h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <small class="text-muted">
+                      <strong>Provider:</strong> ${data.provider?.name || 'Provider'}<br>
+                      <strong>Specialty:</strong> ${data.provider?.specialty || 'General Practice'}<br>
+                      <strong>Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </small>
+                  </div>
+                  <div class="col-md-6">
+                    <small class="text-muted">
+                      <strong>Available Slots:</strong> ${data.count}<br>
+                      <strong>Location:</strong> Medical Center<br>
+                      <strong>Duration:</strong> 30 minutes each
+                    </small>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button class="btn btn-sm btn-outline-primary" onclick="refreshSlots()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh Availability
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="suggestAlternativeDates()">
+                    <i class="bi bi-calendar-week me-1"></i>Show More Dates
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        slotsContainer.innerHTML = html;
+      })
+      .catch(error => {
+        hideLoading();
+        console.error('Error loading slots:', error);
+        showNotification('Error loading time slots. Please try again.', 'danger');
+        slotsContainer.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Error loading time slots. Please try again.
+          </div>
+        `;
+      });
+  }
+
+  // Event listeners
+  if (providerSelect) {
+    providerSelect.addEventListener('change', function() {
+      if (this.value) {
+        // Auto-submit to load date picker
+        setTimeout(updateForm, 100);
+      }
+    });
+  }
+
+  if (dateInput) {
+    dateInput.addEventListener('change', function() {
+      if (this.value && providerSelect && providerSelect.value) {
+        fetchSlots();
+      }
+    });
+  }
+
+  // Set minimum date to today
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    
+    // Set maximum date to 30 days from now
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    dateInput.max = maxDate.toISOString().split('T')[0];
+  }
+
+  // Enhanced appointment type selection
+  document.querySelectorAll('input[name="appointment_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      // Remove active state from all cards
+      document.querySelectorAll('.appointment-type-card').forEach(card => {
+        card.classList.remove('border-primary', 'bg-primary', 'text-white');
+        card.classList.add('border');
+      });
+      
+      // Add active state to selected card
+      const selectedCard = this.closest('.form-check').querySelector('.appointment-type-card');
+      if (selectedCard) {
+        selectedCard.classList.remove('border');
+        selectedCard.classList.add('border-primary', 'bg-primary', 'text-white');
+      }
+    });
+  });
+
+  // Hide loading on page load
+  setTimeout(hideLoading, 500);
+});
+
+// Global helper functions
+function refreshSlots() {
+  const providerSelect = document.getElementById('providerSelect');
+  const dateInput = document.getElementById('dateInput');
+  
+  if (providerSelect && dateInput && providerSelect.value && dateInput.value) {
+    showNotification('Refreshing availability...', 'info');
+    
+    // Re-fetch slots
+    setTimeout(() => {
+      const event = new Event('change');
+      dateInput.dispatchEvent(event);
+    }, 500);
+  }
+}
+
+function selectSlot(slotId) {
+  const providerSelect = document.getElementById('providerSelect');
+  const dateInput = document.getElementById('dateInput');
+  
+  const provider = providerSelect ? providerSelect.value : '';
+  const date = dateInput ? dateInput.value : '';
+  
+  const params = new URLSearchParams({
+    provider: provider,
+    date: date,
+    slot: slotId
+  });
+  
+  window.location.href = `?${params.toString()}`;
+}
+
+function suggestAlternativeDates() {
+  const providerSelect = document.getElementById('providerSelect');
+  if (!providerSelect || !providerSelect.value) {
+    showNotification('Please select a provider first', 'warning');
+    return;
+  }
+  
+  // This would show a modal with alternative dates
+  showNotification('Alternative date suggestions feature coming soon!', 'info');
+}
+
+function joinWaitingList() {
+  const providerSelect = document.getElementById('providerSelect');
+  const dateInput = document.getElementById('dateInput');
+  
+  if (!providerSelect || !providerSelect.value || !dateInput || !dateInput.value) {
+    showNotification('Please select a provider and date first', 'warning');
+    return;
+  }
+  
+  // This would add user to waiting list
+  showNotification('Waiting list feature coming soon! You will be notified when slots become available.', 'info');
+}
+
+function showNotification(message, type = 'info') {
+  // Create notification toast
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  
+  toast.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.remove();
+    }
+  }, 5000);
+}
+</script>
+{% endblock %}

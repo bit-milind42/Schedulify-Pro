@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Add Availability{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Add Availability</h5>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'availability_list' %}">Back</a>
+      </div>
+      <div class="card-body">
+        {% if message %}<div class="alert alert-warning">{{ message }}</div>{% endif %}
+        <form method="post" class="row g-3">{% csrf_token %}
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" name="date" class="form-control" required />
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label fw-semibold">Start</label>
+            <input type="time" name="start" class="form-control" required />
+          </div>
+            <div class="col-sm-3">
+            <label class="form-label fw-semibold">End</label>
+            <input type="time" name="end" class="form-control" required />
+          </div>
+          <div class="col-sm-5 col-md-4">
+            <label class="form-label fw-semibold">Interval (mins)</label>
+            <select name="interval" class="form-select">
+              <option>15</option>
+              <option>20</option>
+              <option selected>30</option>
+              <option>45</option>
+              <option>60</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-success flex-grow-1" type="submit"><i class="bi bi-check-circle"></i> Create Availability</button>
+              <a class="btn btn-outline-secondary" href="{% url 'availability_list' %}">Cancel</a>
+            </div>
+          </div>
+        </form>
+        <p class="text-muted small mt-3"><i class="bi bi-info-circle"></i> After creation, individual time slots are generated automatically based on the interval.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% block title %}Sign In · {{ PROJECT_NAME }}{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Sign in to your account or create a new account to start booking appointments with healthcare providers.">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-lg-6 col-xl-5">
+    <div class="card shadow-lg border-0">
+      <!-- Card Header -->
+      <div class="card-header bg-gradient-primary text-white text-center py-4">
+        <div class="brand-icon mx-auto mb-3">
+          <i class="bi bi-calendar-heart"></i>
+        </div>
+        <h3 class="mb-2">Welcome to {{ PROJECT_NAME }}</h3>
+        <p class="mb-0 opacity-90">Professional healthcare appointment booking</p>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="card-body p-0">
+        <div class="px-4 pt-4 pb-0">
+          <ul class="nav nav-pills nav-fill mb-4" id="authTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {% if active_tab == 'login' %}active{% endif %}" 
+                      id="login-tab" data-bs-toggle="pill" data-bs-target="#login" 
+                      type="button" role="tab" aria-controls="login" aria-selected="{% if active_tab == 'login' %}true{% else %}false{% endif %}">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {% if active_tab == 'register' %}active{% endif %}" 
+                      id="register-tab" data-bs-toggle="pill" data-bs-target="#register" 
+                      type="button" role="tab" aria-controls="register" aria-selected="{% if active_tab == 'register' %}true{% else %}false{% endif %}">
+                <i class="bi bi-person-plus me-2"></i>Create Account
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Login Tab -->
+          <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" 
+               id="login" role="tabpanel" aria-labelledby="login-tab">
+            <div class="px-4 pb-4">
+              <form method="post" data-validate novalidate>
+                {% csrf_token %}
+                
+                <div class="form-group">
+                  <label for="{{ login_form.username.id_for_label }}" class="form-label">
+                    <i class="bi bi-person me-2"></i>Username
+                  </label>
+                  {{ login_form.username }}
+                </div>
+
+                <div class="form-group">
+                  <label for="{{ login_form.password.id_for_label }}" class="form-label">
+                    <i class="bi bi-lock me-2"></i>Password
+                  </label>
+                  {{ login_form.password }}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                    <label class="form-check-label small" for="rememberMe">
+                      Remember me
+                    </label>
+                  </div>
+                  <a href="#" class="small text-decoration-none">Forgot password?</a>
+                </div>
+
+                <div class="d-grid">
+                  <button class="btn btn-primary btn-lg" type="submit">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                  </button>
+                </div>
+              </form>
+
+              <div class="text-center mt-4">
+                <p class="text-muted small mb-0">
+                  Don't have an account?
+                  <button class="btn btn-link p-0 align-baseline text-decoration-none" 
+                          data-bs-toggle="pill" data-bs-target="#register">
+                    Create one here
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Register Tab -->
+          <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" 
+               id="register" role="tabpanel" aria-labelledby="register-tab">
+            <div class="px-4 pb-4">
+              <form method="post" data-validate novalidate>
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ reg_form.first_name.id_for_label }}" class="form-label">
+                        <i class="bi bi-person me-2"></i>First Name
+                      </label>
+                      {{ reg_form.first_name }}
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ reg_form.last_name.id_for_label }}" class="form-label">
+                        <i class="bi bi-person me-2"></i>Last Name
+                      </label>
+                      {{ reg_form.last_name }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="{{ reg_form.username.id_for_label }}" class="form-label">
+                    <i class="bi bi-at me-2"></i>Username
+                  </label>
+                  {{ reg_form.username }}
+                  <div class="form-text">Choose a unique username</div>
+                </div>
+
+                <div class="form-group">
+                  <label for="{{ reg_form.email.id_for_label }}" class="form-label">
+                    <i class="bi bi-envelope me-2"></i>Email Address
+                  </label>
+                  {{ reg_form.email }}
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ reg_form.password1.id_for_label }}" class="form-label">
+                        <i class="bi bi-lock me-2"></i>Password
+                      </label>
+                      {{ reg_form.password1 }}
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="{{ reg_form.password2.id_for_label }}" class="form-label">
+                        <i class="bi bi-lock-fill me-2"></i>Confirm Password
+                      </label>
+                      {{ reg_form.password2 }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Account Type Selection -->
+                <div class="form-group">
+                  <label for="{{ reg_form.role.id_for_label }}" class="form-label">
+                    <i class="bi bi-person-badge me-2"></i>Account Type
+                  </label>
+                  {{ reg_form.role }}
+                  <div id="roleHelp" class="form-text">Choose your account type</div>
+                </div>
+
+                <!-- Specialty Field (for providers) -->
+                <div class="form-group" id="specialtyGroup" style="display: none;">
+                  <label for="{{ reg_form.specialty.id_for_label }}" class="form-label">
+                    <i class="bi bi-award me-2"></i>Medical Specialty
+                  </label>
+                  {{ reg_form.specialty }}
+                  <div class="form-text">e.g., Cardiology, Dermatology, General Practice</div>
+                </div>
+
+                <!-- Role Information Cards -->
+                <div id="roleInfo" class="mb-4">
+                  <div id="customerInfo" class="alert alert-info d-none">
+                    <div class="d-flex align-items-start gap-3">
+                      <i class="bi bi-person-circle text-info fs-4 mt-1"></i>
+                      <div>
+                        <h6 class="mb-2">Patient Account</h6>
+                        <ul class="mb-0 small">
+                          <li>Search and browse healthcare providers</li>
+                          <li>Book appointments with available providers</li>
+                          <li>Manage your appointment history</li>
+                          <li>Receive appointment confirmations and reminders</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="providerInfo" class="alert alert-success d-none">
+                    <div class="d-flex align-items-start gap-3">
+                      <i class="bi bi-person-badge text-success fs-4 mt-1"></i>
+                      <div>
+                        <h6 class="mb-2">Healthcare Provider Account</h6>
+                        <ul class="mb-0 small">
+                          <li>Set your availability and working hours</li>
+                          <li>Approve or reject appointment requests</li>
+                          <li>Manage your patient appointments</li>
+                          <li>Build your professional profile</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-check mb-4">
+                  <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                  <label class="form-check-label small" for="agreeTerms">
+                    I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> 
+                    and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                  </label>
+                </div>
+
+                <div class="d-grid">
+                  <button class="btn btn-success btn-lg" type="submit">
+                    <i class="bi bi-person-plus me-2"></i>Create Account
+                  </button>
+                </div>
+              </form>
+
+              <div class="text-center mt-4">
+                <p class="text-muted small mb-0">
+                  Already have an account?
+                  <button class="btn btn-link p-0 align-baseline text-decoration-none" 
+                          data-bs-toggle="pill" data-bs-target="#login">
+                    Sign in here
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row g-4 mt-4">
+      <div class="col-md-4">
+        <div class="text-center">
+          <div class="feature-icon mx-auto mb-3">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h6>Secure & Private</h6>
+          <p class="small text-muted">Your health information is protected with enterprise-grade security</p>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="text-center">
+          <div class="feature-icon mx-auto mb-3">
+            <i class="bi bi-clock"></i>
+          </div>
+          <h6>24/7 Access</h6>
+          <p class="small text-muted">Book appointments anytime, anywhere from any device</p>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="text-center">
+          <div class="feature-icon mx-auto mb-3">
+            <i class="bi bi-people"></i>
+          </div>
+          <h6>Qualified Providers</h6>
+          <p class="small text-muted">Connect with verified healthcare professionals in your area</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const roleSelect = document.querySelector('select[name="reg-role"]');
+  const specialtyGroup = document.getElementById('specialtyGroup');
+  const specialtyInput = document.querySelector('input[name="reg-specialty"]');
+  const roleHelp = document.getElementById('roleHelp');
+  const customerInfo = document.getElementById('customerInfo');
+  const providerInfo = document.getElementById('providerInfo');
+
+  function updateRoleInterface() {
+    if (!roleSelect) return;
+    
+    const selectedRole = roleSelect.value;
+    
+    // Hide all info cards first
+    if (customerInfo) customerInfo.classList.add('d-none');
+    if (providerInfo) providerInfo.classList.add('d-none');
+    
+    if (selectedRole === 'provider') {
+      // Show specialty field
+      if (specialtyGroup) specialtyGroup.style.display = '';
+      if (specialtyInput) {
+        specialtyInput.placeholder = 'e.g., Cardiology, Dermatology, General Practice';
+        specialtyInput.required = true;
+      }
+      if (roleHelp) roleHelp.textContent = 'Healthcare providers can manage appointments and set availability';
+      if (providerInfo) providerInfo.classList.remove('d-none');
+      
+    } else if (selectedRole === 'customer') {
+      // Hide specialty field
+      if (specialtyGroup) specialtyGroup.style.display = 'none';
+      if (specialtyInput) {
+        specialtyInput.value = '';
+        specialtyInput.required = false;
+      }
+      if (roleHelp) roleHelp.textContent = 'Patients can browse providers and book appointments';
+      if (customerInfo) customerInfo.classList.remove('d-none');
+      
+    } else {
+      // No role selected
+      if (specialtyGroup) specialtyGroup.style.display = 'none';
+      if (roleHelp) roleHelp.textContent = 'Choose your account type';
+    }
+  }
+
+  // Initialize role interface
+  if (roleSelect) {
+    updateRoleInterface();
+    roleSelect.addEventListener('change', updateRoleInterface);
+  }
+
+  // Enhanced form styling
+  const formControls = document.querySelectorAll('.form-control');
+  formControls.forEach(input => {
+    input.classList.add('form-control-lg');
+    
+    // Add focus effects
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.classList.remove('focused');
+    });
+  });
+
+  // Password strength indicator (basic)
+  const password1 = document.querySelector('input[name="reg-password1"]');
+  const password2 = document.querySelector('input[name="reg-password2"]');
+  
+  if (password1) {
+    password1.addEventListener('input', function() {
+      const strength = getPasswordStrength(this.value);
+      // Add visual feedback for password strength
+      this.classList.remove('is-weak', 'is-medium', 'is-strong');
+      if (this.value.length > 0) {
+        this.classList.add(`is-${strength}`);
+      }
+    });
+  }
+  
+  if (password2 && password1) {
+    password2.addEventListener('input', function() {
+      if (this.value && this.value !== password1.value) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      } else if (this.value === password1.value && this.value.length > 0) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      }
+    });
+  }
+});
+
+function getPasswordStrength(password) {
+  if (password.length < 6) return 'weak';
+  if (password.length < 10) return 'medium';
+  return 'strong';
+}
+</script>
+
+<!-- Additional Styles -->
+<style>
+  .brand-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+  
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--brand-primary-light);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-primary);
+    font-size: 1.25rem;
+  }
+  
+  .nav-pills .nav-link {
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: var(--transition-fast);
+  }
+  
+  .nav-pills .nav-link.active {
+    background: var(--brand-primary);
+  }
+  
+  .form-group.focused {
+    transform: scale(1.01);
+    transition: var(--transition-fast);
+  }
+  
+  .form-control.is-weak {
+    border-color: var(--brand-danger);
+  }
+  
+  .form-control.is-medium {
+    border-color: var(--brand-warning);
+  }
+  
+  .form-control.is-strong {
+    border-color: var(--brand-success);
+  }
+  
+  .card {
+    border-radius: var(--radius-2xl);
+  }
+  
+  .card-header {
+    border-bottom: none;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0 !important;
+  }
+  
+  @media (max-width: 768px) {
+    .row.g-3 > .col-md-6 {
+      margin-bottom: 0;
+    }
+    
+    .nav-pills .nav-link {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+  }
+</style>
+{% endblock %}

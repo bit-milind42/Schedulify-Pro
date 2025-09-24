@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Edit Availability{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-6">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Edit Availability</h5>
+        <a class="btn btn-outline-secondary btn-sm" href="{% url 'availability_list' %}">Back</a>
+      </div>
+      <div class="card-body">
+        {% if message %}<div class="alert alert-warning">{{ message }}</div>{% endif %}
+        {% if has_booked %}
+          <div class="alert alert-info small">Some slots are already booked. Time range and interval cannot be modified.</div>
+        {% endif %}
+        <form method="post" class="row g-3">{% csrf_token %}
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" name="date" value="{{ availability.date }}" class="form-control" {% if has_booked %}disabled{% endif %} required />
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label fw-semibold">Start</label>
+            <input type="time" name="start" value="{{ availability.start_time|time:'H:i' }}" class="form-control" {% if has_booked %}disabled{% endif %} required />
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label fw-semibold">End</label>
+            <input type="time" name="end" value="{{ availability.end_time|time:'H:i' }}" class="form-control" {% if has_booked %}disabled{% endif %} required />
+          </div>
+          <div class="col-sm-5 col-md-4">
+            <label class="form-label fw-semibold">Interval (mins)</label>
+            <select name="interval" class="form-select" {% if has_booked %}disabled{% endif %}>
+              {% for val in '10,15,20,30,45,60'.split(',') %}
+                <option value="{{ val }}" {% if availability.interval_minutes|stringformat:'s' == val %}selected{% endif %}>{{ val }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 d-flex gap-2 mt-2">
+            <button class="btn btn-success" type="submit" {% if has_booked %}disabled{% endif %}><i class="bi bi-check-circle"></i> Save Changes</button>
+            <a class="btn btn-outline-danger" href="{% url 'availability_delete' availability.id %}">Delete</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
