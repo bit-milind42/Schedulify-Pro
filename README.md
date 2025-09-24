@@ -81,7 +81,8 @@ Configured with Django console backend (prints to terminal). Swap `EMAIL_BACKEND
 Fork, branch, and submit PRs. Suggested contribution areas: timezone support, pagination, ICS export, calendar integrations.
 
 ## 📄 License
-Internal / educational prototype (add explicit license if distributing).
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 Built as a focused, extensible starter to accelerate scheduling products. Rename, extend, or integrate as needed.
